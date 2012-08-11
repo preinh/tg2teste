@@ -16,17 +16,18 @@ class StationsController(BaseController):
     @expose('teste.templates.stations')
     def index(self):
         """Handle the stations page."""
-        station_list = model.stations.Stations().getAll()
+        stations_list = model.stations.Stations().getAll()
         return dict(page = 'stations', 
-                    events = station_list,
+                    stations = stations_list,
                     cycle = cycle )
     
     @expose('teste.templates.stations')
-    def events(self):
+    def stations(self):
         """Handle the events page."""
-        station_list = model.stations.Stations().getAll()
+        stations_list = model.stations.Stations().getAll()
+        print "ma" 
         return dict(page='stations', 
-                    station=station_list)
+                    station=stations_list)
 
 
     @expose('teste.templates.station')

@@ -10,11 +10,13 @@
 #from teste.model import DeclarativeBase, metadata, DBSession
 
 from seiscomp3 import Client, IO, Core, DataModel
+import commands
 
+from datetime import datetime, timedelta
 
 class Events(object):
 
-    debug = True
+    debug = False
 
     def __init__(self):
     
@@ -32,10 +34,15 @@ class Events(object):
         
         self.dbQuery = self._createQuery()        
         
-        self.s = Core.Time_FromString("2012-01-01 00:00:00", "%F %T")
-        self.e = Core.Time_FromString("2012-02-01 00:00:00", "%F %T")
+        daysBefore = 20
+        
+        self.e = Core.Time.GMT()
+        self.s = self.e - Core.TimeSpan(daysBefore*24*60*60)
+        
+#        self.s = Core.Time_FromString("2012-01-01 00:00:00", "%F %T")
+#        self.e = Core.Time_FromString("2012-02-01 00:00:00", "%F %T")
     
-        self.event_list = []
+        self.events_list = []
 
 
     def getAll(self):
@@ -92,15 +99,18 @@ class Events(object):
                 
             d = dict(id=evt,
                      desc= desc,
-                     time= org.time().value(), 
+                     time= str(org.time().value()), 
                      lat= ("%.2f") % org.latitude().value(), 
                      lon= ("%.2f") % org.longitude().value(),
                      dep= ("%d") % org.depth().value(),
                      mag= _mag
                      )        
-            self.event_list.append(d)
+            self.events_list.append(d)
 
-        return self.event_list
+        return sorted(self.events_list, key=lambda event: event['time'], reverse=True)
+
+        return self.events_list
+
 
 
 
@@ -115,33 +125,21 @@ class Events(object):
         if not evt:
             r = dict(error="Event not Found")
             return r
+
+
+        cmd = "/home/pirchiner/bin/scbulletin -E %s -3 --extra -d '%s://%s'" % (eid, self.dbDriverName, self.dbAddress)
+        out = commands.getstatusoutput(cmd)
+
+        out_lines = out[1]
+#        out_lines = out_lines.replace("automatic", "<span style='font-color: red;'>automatic</span>")
+#        out_lines = out_lines.replace("manual", "<span color='green'>manual</span>")
+    
+        out_lines = out_lines.split('\n')
+    
     
         r = dict(error="",
-                 evt = dict(id="id",
-                            desc="la perticasa",
-                            ),
-                 org = dict(time="2012-00-00 00:00:00",
-                            lat="-90",
-                            lat_err = "0.2",
-                            lon="-180",
-                            lon_err="0.3",
-                            dep=10,
-                            dep_err=0.1,
-                            rms = 0.15,
-                            preferred=True,
-                            status="A",
-                            sta_count=15,
-                            ),
-                 picks=dict(station="BLA",
-                            phase="P",
-                            value="2012-00-00 00:01:00"
-                            ),
-                 mags=dict(type="mB",
-                           value=7.4,
-                           ),
-                 amps=dict(type="mB",
-                           value=5,
-                           ),
+                 eid=eid,
+                 t = out_lines,
                  )
         return r
 
@@ -212,4 +210,5 @@ class EventFilter(object):
         self.max_lon = max_lon
         
         self.catalogs = catalogs
+
         

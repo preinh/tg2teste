@@ -8,28 +8,51 @@
 
 <head>
   <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" py:if="False"/>
-  <title>Event List</title>
+  <title>Estacoes Sismograficas</title>
 </head>
 
 <body>
-    ${sidebar_top()}
   <div id="getting_started">
-    <table>
-	        <tr>
-	            <td>id</td>
-	            <td>time</td>
-	            <td>lat</td>
-	            <td>lon</td>
-	            <td>dep</td>
+    	
+  	<table width="100%"><tr>
+  		<td height="250px">
+			<div width="100%" >
+				FALTA: <br />
+				MELHORAR DETALHES !!! <br />
+				filtros para selecionar estacoes<br />
+				link para sismogramas<br />
+				filtro por eventos<br />
+			</div>  		
+  		</td>
+  		<td>
+			<div width="100%">
+				FALTA: <br />
+				mapa com estacoes<br/>
+				filtro por caixa<br />
+				filtro por distancia<br />
+			</div>  		
+  		</td>
+  	</tr></table>
+  
+  
+    <table  py:with="cls=cycle(('#ffffff', '#ccebef'))"  width="100%"  style="text-align: center;" >
+	        <tr class="table_header" >
+	            <td>Rede.Estacao</td>
+	            <td>Local</td>
+	            <td>Latitude</td>
+	            <td>Longitude</td>
+	            <td>Elevacao</td>
 	        </tr>
     	
-        <py:for each="evt in events">
-	        <tr>
-	            <td>${evt.id}</td>
-	            <td>${evt.time}</td>
-	            <td>${evt.lat}</td>
-	            <td>${evt.lon}</td>
-	            <td>${evt.dep}</td>
+        <py:for each="s in stations">
+	        <tr style="background-color: ${cls.next()}">
+	            <td style="text-align: center;">
+	            	<a href="/stations/${s.NN}.${s.SSSSS}" >${s.NN}.${s.SSSSS}</a>
+	            </td>
+	            <td>${s.desc}</td>
+	            <td>${s.lat}</td>
+	            <td>${s.lon}</td>
+	            <td>${s.ele}</td>
 	        </tr>
         </py:for>
     </table>

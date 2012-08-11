@@ -55,6 +55,11 @@ class RootController(BaseController):
 #        """Handle the events page."""
 #        redirect('/events/')
 
+#    @expose()
+#    def stations(self):
+#        """Handle the events page."""
+#        redirect('/stations')
+  
     
 #    @expose('teste.templates.stations')
 #    def stations(self):

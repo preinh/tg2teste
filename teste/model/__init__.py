@@ -62,3 +62,4 @@ def init_model(engine):
 from teste.model.auth import User, Group, Permission
 
 from teste.model.events import Events
+from teste.model.stations import Stations

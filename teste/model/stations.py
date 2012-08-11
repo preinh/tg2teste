@@ -1,124 +1,74 @@
 # -*- coding: utf-8 -*-
 #import os
 #import sys
-#
-#from datetime import datetime
-#from sqlalchemy import Table, ForeignKey, Column
-#from sqlalchemy.orm import relation, synonym
-#from sqlalchemy.types import Unicode, Integer, DateTime
-#
-#from teste.model import DeclarativeBase, metadata, DBSession
+
+from teste.lib import app_globals as appg
 
 from seiscomp3 import Client, IO, Core, DataModel
 
-
 class Stations(object):
 
-    debug = True
+    debug = False
 
     def __init__(self):
-    
         if self.debug:
             self.dbDriverName="postgresql"
             self.dbAddress="sysop:sysop@localhost/seiscomp3"
             self.dbPlugin = "dbpostgresql"
-            #dbDriverName="mysql"
-            #dbAddress="sysop:sysop@localhost/seiscomp3"
-            #dbPlugin = "dbmysql"
+#            self.dbDriverName="mysql"
+#            self.dbAddress="sysop:sysop@localhost/seiscomp3"
+#            self.dbPlugin = "dbmysql"
         else:
             self.dbDriverName="postgresql"
-            self.dbAddress="sysop:sysop@10.110.0.130/sc_master"
+            self.dbAddress="sysop:sysop@10.110.0.130/sc_request"
             self.dbPlugin = "dbpostgresql"
-        
-        self.dbQuery = self._createQuery()        
-        
-        self.s = Core.Time_FromString("2012-01-01 00:00:00", "%F %T")
-        self.e = Core.Time_FromString("2012-02-01 00:00:00", "%F %T")
-    
-        self.event_list = []
+            
+        self.dbQuery = self._createQuery()
+
+        self.inventory = appg.singleInventory().inventory
 
 
     def getAll(self):
         
-        # query events
-        qEvts = self.dbQuery.getEvents(self.s, self.e)
-        
-        # collect event/p_origin/p_mag
-        self.events = []
-        for obj in qEvts:
-            evt = DataModel.Event.Cast(obj)
-            if evt:
-                self.events.append( [ evt.publicID(), evt.preferredOriginID(), evt.preferredMagnitudeID()] )
- 
-        # pra cada evento        
-        for evt, p_org, p_mag in self.events:
+        self.stations_list = []
+                                                              
+        for i in range(self.inventory.networkCount()):
+            net = self.inventory.network(i)
+            for j in range(net.stationCount()):
+                station = net.station(j)
+                self.stations_list.append(dict(NN=net.code(),
+                                              SSSSS=station.code(),
+                                              desc = station.description(),
+                                              lat = ("%.3f") % station.latitude(),
+                                              lon = ("%.3f") % station.longitude(),
+                                              ele = ("%.1f") % station.elevation(), 
+                                              ) )
 
-            _e = self.dbQuery.getEventByPublicID(evt)
-            self.dbQuery.load(_e)
-            
-            if _e.eventDescriptionCount() != 0:
-                desc = _e.eventDescription(0).text()
-            else:
-                desc = "unknown"
-
-            # pior jeito de buscar a preferred_origin
-            qOrigin = self.dbQuery.getOrigins(evt)
-            for obj_origin in qOrigin:
-                origin = DataModel.Origin.Cast(obj_origin)
-                if origin.publicID() == p_org:
-                    break
-
-            # separate origin from dbInterator
-            org = origin
-            
-            #load origin parameters
-            self.dbQuery.load(org)
-            
-            # get magnitudes
-            nmag = org.magnitudeCount()
-            if nmag != 0:
-                # pior jeito de buscar a preferred_magnitude
-                for i in xrange(nmag):
-                    mag = org.magnitude(i)
-                    if mag.publicID() == p_mag:
-                        break
-    
-                val = mag.magnitude().value()
-                typ = mag.type()
-                stc = mag.stationCount()
-                _mag = ("%.1f %s (%d)") % (val, typ, stc)
-            else:
-                _mag = "-- (--)" 
-                
-            d = dict(id=evt,
-                     desc= desc,
-                     time= org.time().value(), 
-                     lat= ("%.2f") % org.latitude().value(), 
-                     lon= ("%.2f") % org.longitude().value(),
-                     dep= ("%d") % org.depth().value(),
-                     mag= _mag
-                     )        
-            self.event_list.append(d)
-
-        return self.event_list
+        return self.stations_list
 
 
 
     def getDetails(self, sid=None):
         r = {}
         
-        if not eid:
+        if not sid:
             r = dict(error="Invalid ID")
             return r
-
-        evt = self.dbQuery.getEventByPublicID(eid)
-        if not evt:
-            r = dict(error="Event not Found")
-            return r
+        try:
+            sid_list = sid.split('.')
+            nn = sid_list[0]
+            ss = sid_list[1]
+    
+            if not nn or not ss:
+                r = dict(error="Station Not Found")
+                return r
+        except:
+                r = dict(error="Out of pattern NN.SSSSS")
+                return r
     
         r = dict(error="",
-                 evt = dict(id="id",
-                            desc="la perticasa",
+                 evt = dict(id=nn,
+                            desc=ss,
                             ),
                  org = dict(time="2012-00-00 00:00:00",
                             lat="-90",
@@ -147,6 +97,8 @@ class Stations(object):
 
 
     def _createQuery(self):
+
+        print 0.88
         # Get global plugin registry
         self.registry = Client.PluginRegistry.Instance()
         # Add plugin dbmysql
@@ -203,6 +155,4 @@ class StationFilter(object):
         
         self.min_lon = min_lon
         self.max_lon = max_lon
-        
-        self.catalogs = catalogs
         
