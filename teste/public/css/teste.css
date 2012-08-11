@@ -11,3 +11,11 @@ ul {
 .required th {
     font-weight: bold;
 }
+
+
+.table_header {
+	/* background-color: #f3ae4c; */
+	background-color:#0896ad;
+	text-align:center; 
+	color:white;
+}

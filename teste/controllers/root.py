@@ -18,160 +18,11 @@ from teste.lib.base import BaseController
 from teste.controllers.error import ErrorController
 
 from teste.controllers.events import EventsController
-from teste.controllers.movie import MovieController
+from teste.controllers.stations import StationsController
 
 
 __all__ = ['RootController']
 
-from tw2.jqplugins.jqgrid import jqGridWidget
-from tw2.jqplugins.jqgrid.base import word_wrap_css
-from random import random
-from random import randint
-
-r = lambda x: randint(0, x - 1)
-
-# No sample b/c its so difficult to find a datasource.
-
-def generate_data(n):
-    fnames = ['S.', 'J.']
-    lnames = ['Flanderson', 'Anderson', 'Sanderson', 'Boot', 'Bean', 'Resig']
-    intros = ['', 'On the', 'Regarding the', 'On', 'New Developments in',
-              'A Survey of the',
-             ]
-    adjectives = ['Scientific', 'Schmientific', 'Cosmological', 'Astronomical',
-                  'Computational', 'Fromputational', 'Mechanical', 'Chemical',
-                  'Pythonic', 'Functional', 'Declarative', 'Quantum',
-                  'Entanglement', 'Singular', 'Non-negative',
-                 ]
-    nouns = ['Problems', 'Solutions', 'Ins-and-outs', 'Nuances',
-             'Transmogrification', 'Implementation',
-            ]
-    segues = ['of', 'underlying']
-    journals = ['Review', 'Journal', 'Conference']
-    for i in range(n):
-        authors = ", ".join(["%s %s" % (fnames[r(len(fnames))],
-                                        lnames[r(len(lnames))])
-                             for j in range(randint(1, 2))])
-        title = "%s %s %s %s %s %s." % (
-            intros[r(len(intros))],
-            adjectives[r(len(adjectives))],
-            nouns[r(len(nouns))],
-            segues[r(len(segues))],
-            adjectives[r(len(adjectives))],
-            nouns[r(len(nouns))],
-        )
-        journal = "The %s of %s %s" % (
-            journals[r(len(journals))],
-            adjectives[r(len(adjectives))],
-            nouns[r(len(nouns))],
-        )
-        published = randint(1955, 2010)
-        yield {'authors': authors,
-               'title': title,
-               'journal': journal,
-               'published_on': published}
-
-class mygrid(jqGridWidget):
-    options = {
-        'pager': 'module-0-demo_pager',
-        'caption': 'All research publications',
-        'data': [row for row in generate_data(55)],
-        'datatype': 'local',
-        'colNames': ['Authors', 'Title', 'Journal', 'Published'],
-        'colModel': [
-            {
-                'name':'authors',
-                'width':50,
-                'align':'center',
-            }, {
-                'name':'title',
-            }, {
-                'name':'journal',
-            }, {
-                'name':'published_on',
-                'width':50,
-                'align':'center'
-            },
-        ],
-        'rowNum': 15,
-        'rowList': [15, 30, 50],
-        'viewrecords': True,
-        'imgpath': 'scripts/jqGrid/themes/green/images',
-        'width': 920,
-        'height': 'auto',
-    }
-    pager_options = {"search": True, "refresh": True, "add": False, }
-    prmSearch = {
-        "sopt": ["cn", "bw"],
-        "caption": "Search...",
-        "multipleSearch": True,
-    }
-#    custom_pager_buttons = [
-#        {
-#            "caption":"",
-#            "buttonicon":"ui-icon-newwin",
-#            'onClickButton': None,
-#            'position': "last",
-#            'title':"B1",
-#            'cursor':"pointer"
-#        }, {
-#            'caption': "",
-#            'buttonicon': "ui-icon-cart",
-#            'onClickButton': None,
-#            'position': "first",
-#            'title': "B2",
-#            'cursor': "pointer"
-#        },
-#    ]
-
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(mygrid, self).prepare()
-            
-    
-class grdEvents(jqGridWidget):
-
-    def prepare(self):
-        self.resources.append(word_wrap_css)
-        super(grdEvents, self).prepare()
-            
-    options = {
-        'pager': 'module-0-demo_pager',
-        'caption': 'Boletim Sismico Brasileiro',
-        'data': model.events.Events().getAll(),
-        'datatype': 'local',
-        'colNames': ['Id', 'Time', 'Lat', 'Lon', 'Dep'],
-        'colModel': [
-            {
-                'name':'id',
-                'width':50,
-                'align':'center',
-            }, {
-                'name':'time',
-            }, {
-                'name':'lat',
-            }, {
-                'name':'lon',
-            }, {
-                'name':'dep',
-                'width':50,
-                'align':'center'
-            },
-        ],
-        'rowNum': 15,
-        'rowList': [15, 30, 50],
-        'viewrecords': True,
-        'imgpath': 'scripts/jqGrid/themes/green/images',
-        'width': 920,
-        'height': 'auto',
-    }
-    pager_options = {"search": True, "refresh": True, "add": False, }
-    prmSearch = {
-        "sopt": ["cn", "bw"],
-        "caption": "Search...",
-        "multipleSearch": True,
-    }
-    
 
 class RootController(BaseController):
     """
@@ -191,30 +42,27 @@ class RootController(BaseController):
     admin = AdminController(model, DBSession, config_type=TGAdminConfig)
 
     error = ErrorController()
-    #events = EventsController()
-
-    movie = MovieController()
-
+    events = EventsController()
+    stations = StationsController()
 
     @expose('teste.templates.index')
     def index(self):
         """Handle the front-page."""
         return dict(page='index')
 
-    @expose('teste.templates.jgrid')
-    def events(self):
-        """Handle the events page."""
-        grid = grdEvents('bsb')
-        return dict(page='events', w=grid)
+#    @expose()
+#    def events(self):
+#        """Handle the events page."""
+#        redirect('/events/')
 
     
-    @expose('teste.templates.stations')
-    def stations(self):
-        """Handle the stations page."""
-        #print "atendi ao events request"
-        event_list = model.events.Events().getAll()
-        #print event_list
-        return dict(page='stations', events=event_list)
+#    @expose('teste.templates.stations')
+#    def stations(self):
+#        """Handle the stations page."""
+#        #print "atendi ao events request"
+#        event_list = model.events.Events().getAll()
+#        #print event_list
+#        return dict(page='stations', events=event_list)
     
 
     @expose('teste.templates.waveform')
@@ -230,15 +78,6 @@ class RootController(BaseController):
     def about(self):
         """Handle the 'about' page."""
         return dict(page='about')
-
-    @expose('teste.templates.jgrid')
-    def jgrid(self):
-        """Handle the 'about' page."""
-        w = mygrid("id")
-        #print w.super._pager_options
-        #print "corinthians 1" + str(w.pager_options)
-        return dict(page='jgrid', w=w)
-
 
     @expose('teste.templates.environ')
     def environ(self):

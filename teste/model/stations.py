@@ -12,7 +12,7 @@
 from seiscomp3 import Client, IO, Core, DataModel
 
 
-class Events(object):
+class Stations(object):
 
     debug = True
 
@@ -104,7 +104,7 @@ class Events(object):
 
 
 
-    def getDetails(self, eid=None):
+    def getDetails(self, sid=None):
         r = {}
         
         if not eid:
@@ -163,19 +163,13 @@ class Events(object):
 
     
     def __repr__(self):
-        return ('<Events: start=%s end=%s>' % str(self.s), str(self.e)).encode('utf-8')
+        return ('<Stations: start=%s end=%s>' % str(self.s), str(self.e)).encode('utf-8')
 
     def __unicode__(self):
-        return "Events bla bla"
+        return "Stations"
 
 
-class EventCatalog:
-    IAG = 1
-    QED = 2
-    ISC = 3
-
-
-class EventFilter(object):
+class StationFilter(object):
 
     def __init__(self, 
                 start_time = 0, 
@@ -193,7 +187,6 @@ class EventFilter(object):
                 min_lon = -180,
                 max_lon = +180,
                 
-                catalogs = [EventCatalog.IAG]
                 ):
         
         self.start_time = start_time 

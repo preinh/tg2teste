@@ -12,30 +12,58 @@
 </head>
 
 <body>
-    ${sidebar_top()}
+    <!--  ${sidebar_top()}  -->
   <div id="getting_started">
-    <table>
-	        <tr>
-	            <td>id</td>
-	            <td>time</td>
-	            <td>lat</td>
-	            <td>lon</td>
-	            <td>dep</td>
+  
+  	<h1>Lista de Eventos:</h1>
+  	
+  	<table width="100%"><tr>
+  		<td height="250px">
+			<div width="100%" >
+				FALTA: <br />
+				MELHORAR DETALHES !!! <br />
+				filtros para selecionar eventos<br />
+				link para sismograma<br />
+				filtro por estacoes<br />
+			</div>  		
+  		</td>
+  		<td>
+			<div width="100%">
+				FALTA: <br />
+				mapa com eventos<br/>
+				filtro por caixa<br />
+				filtro por distancia<br />
+				animacao<br />
+			</div>  		
+  		</td>
+  	</tr></table>
+  
+	<table py:with="cls=cycle(('#ffffff', '#ccebef'))"  width="100%"  style="text-align: center;" >
+	        <tr class='table_header'>
+	            <td>Onde</td>
+	            <td>Hora</td>
+	            <td>Latitude</td>
+	            <td>Longitude</td>
+	            <td>Profundidade</td>
+	            <td>Tamanho (estacoes)</td>
 	        </tr>
     	
         <py:for each="evt in events">
-	        <tr>
-	            <td>${evt.id}</td>
-	            <td>${evt.time}</td>
-	            <td>${evt.lat}</td>
-	            <td>${evt.lon}</td>
-	            <td>${evt.dep}</td>
+	        <tr style="background-color: ${cls.next()}">
+	            <td style="text-align: center;"><a href="/events/${evt.id}">${evt.desc}</a></td>
+	            <td style="text-align: center;">${evt.time}</td>
+	            <td style="text-align: center;">${evt.lat}</td>
+	            <td style="text-align: center;">${evt.lon}</td>
+	            <td style="text-align: center;">${evt.dep}</td>
+	            <td style="text-align: center;">${evt.mag}</td>
 	        </tr>
         </py:for>
     </table>
   </div>
-  <div class="clearingdiv" />
-  <div class="notice">E nois!!!
-  </div>
+<!--
+<div class="clearingdiv" />
+<div class="notice">E nois!!!
+</div>
+-->  
 </body>
 </html>
