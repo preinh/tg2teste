@@ -24,9 +24,9 @@ class Events(object):
             self.dbDriverName="postgresql"
             self.dbAddress="sysop:sysop@localhost/seiscomp3"
             self.dbPlugin = "dbpostgresql"
-            #dbDriverName="mysql"
-            #dbAddress="sysop:sysop@localhost/seiscomp3"
-            #dbPlugin = "dbmysql"
+#            self.dbDriverName="mysql"
+#            self.dbAddress="sysop:sysop@localhost/seiscomp3"
+#            self.dbPlugin = "dbmysql"
         else:
             self.dbDriverName="postgresql"
             self.dbAddress="sysop:sysop@10.110.0.130/sc_master"
@@ -112,6 +112,46 @@ class Events(object):
         return self.events_list
 
 
+    def getAllJson(self):
+        json=""
+        for d in self.events_list[1:]:
+            json += """
+                {
+                    id:     '%s',
+                    desc:   '%s',
+                    time:   '%s',
+                    lat:    %f,
+                    lng:    %f,
+                    dep:    %f,
+                    mag:    '%s'
+                },
+            """ % (d['id'], d['desc'], d['time'], float(d['lat']), float(d['lon']), float(d['dep']), d['mag'] )
+
+        json = "var businesses = [" + json[ : -1] + "];"
+        return json
+    
+    
+    def getLastJson(self):
+        json=""
+        
+        print self.events_list
+        d = self.events_list[0]
+        
+        json = """
+            {
+                id:     '%s',
+                desc:   '%s',
+                time:   '%s',
+                lat:    %f,
+                lng:    %f,
+                dep:    %f,
+                mag:    '%s'
+            },
+        """ % (d['id'], d['desc'], d['time'], float(d['lat']), float(d['lon']), float(d['dep']), d['mag'] )
+
+        json = "var last = [" + json[ : -1] + "];"
+        return json
+
 
 
     def getDetails(self, eid=None):
@@ -135,7 +175,6 @@ class Events(object):
 #        out_lines = out_lines.replace("manual", "<span color='green'>manual</span>")
     
         out_lines = out_lines.split('\n')
-    
     
         r = dict(error="",
                  eid=eid,

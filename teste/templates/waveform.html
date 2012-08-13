@@ -8,34 +8,15 @@
 
 <head>
   <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" py:if="False"/>
-  <title>Event List</title>
+  <title>Sismogramas</title>
 </head>
 
-<body>
-    ${sidebar_top()}
-  <div id="getting_started">
-    <table>
-	        <tr>
-	            <td>id</td>
-	            <td>time</td>
-	            <td>lat</td>
-	            <td>lon</td>
-	            <td>dep</td>
-	        </tr>
-    	
-        <py:for each="evt in events">
-	        <tr>
-	            <td>${evt.id}</td>
-	            <td>${evt.time}</td>
-	            <td>${evt.lat}</td>
-	            <td>${evt.lon}</td>
-	            <td>${evt.dep}</td>
-	        </tr>
-        </py:for>
-    </table>
+<body width="100%">
+	<h1>Requisicao de Sismogramas:</h1>
+
+  <div  width="100%" id="getting_started">
+	<iframe width="100%" height="100%" style="border-width: 0;" src="http://www.sismo.iag.usp.br/arclink/query" />
   </div>
   <div class="clearingdiv" />
-  <div class="notice">E nois!!!
-  </div>
 </body>
 </html>

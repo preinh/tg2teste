@@ -16,18 +16,30 @@ class EventsController(BaseController):
     @expose('teste.templates.events')
     def index(self):
         """Handle the events page."""
-        event_list = model.events.Events().getAll()
+        e = model.events.Events()
+        event_list = e.getAll()
+        json = e.getAllJson()
+        json_l = e.getLastJson()
         return dict(page = 'events', 
                     events = event_list,
-                    cycle = cycle )
+                    cycle = cycle,
+                    json = json,
+                    json_l = json_l
+                    )
     
     @expose('teste.templates.events')
     def events(self):
         """Handle the events page."""
-        event_list = model.events.Events().getAll()
+        e = model.events.Events()
+        event_list = e.getAll()
+        json = e.getAllJson()
+        json_l = e.getLastJson()
         return dict(page='events', 
-                    events=event_list)
-
+                    events = event_list,
+                    cycle = cycle,
+                    json = json,
+                    json_l = json_l
+                    )
 
     @expose('teste.templates.event')
     def _default(self, came_from=lurl('/')):

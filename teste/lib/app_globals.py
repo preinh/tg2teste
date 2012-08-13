@@ -20,12 +20,12 @@ class singleInventory():
     debug = False
 
     if debug:
-        dbDriverName="postgresql"
+#        dbDriverName="postgresql"
+#        dbAddress="sysop:sysop@localhost/seiscomp3"
+#        dbPlugin = "dbpostgresql"
+        dbDriverName="mysql"
         dbAddress="sysop:sysop@localhost/seiscomp3"
-        dbPlugin = "dbpostgresql"
-        #dbDriverName="mysql"
-        #dbAddress="sysop:sysop@localhost/seiscomp3"
-        #dbPlugin = "dbmysql"
+        dbPlugin = "dbmysql"
     else:
         dbDriverName="postgresql"
         dbAddress="sysop:sysop@10.110.0.130/sc_request"

@@ -79,6 +79,14 @@ class RootController(BaseController):
         return dict(page='waveform', events=event_list)
     
 
+
+    @expose('teste.templates.google')
+    def google(self):
+        """Handle the 'about' page."""
+        return dict(page='google')
+
+
+
     @expose('teste.templates.about')
     def about(self):
         """Handle the 'about' page."""

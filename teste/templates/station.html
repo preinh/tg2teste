@@ -8,38 +8,92 @@
 
 <head>
   <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" py:if="False"/>
-  <title>EventDetails</title>
+  
+    <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=AIzaSyAnoSK2eAZ-aaXYnvMOaTesb9WyYGra1ik&amp;sensor=false"
+            type="text/javascript"></script>
+    <script type="text/javascript">
+  //<![CDATA[
+    
+
+    function initialize() {
+      if (GBrowserIsCompatible()) {
+        var map = new GMap2(document.getElementById("map_canvas"));
+        map.setCenter(new GLatLng(${d.details[0]['lat']}, ${d.details[0]['lon']}), 10);
+        map.setMapType(G_PHYSICAL_MAP);
+        
+
+        var baseIcon = new GIcon();
+        baseIcon.shadow = null;
+        baseIcon.iconSize = new GSize(12, 12);
+        baseIcon.shadowSize = new GSize(0,0);
+        baseIcon.iconAnchor = new GPoint(6, 6);
+        baseIcon.infoWindowAnchor = new GPoint(9, 2);
+        baseIcon.infoShadowAnchor = new GPoint(18, 25);
+
+        var coldIcon = new GIcon(baseIcon);
+        coldIcon.image = "/images/station.png";
+
+       	var marker = new GMarker(new GLatLng(${d.details[0]['lat']}, ${d.details[0]['lon']}), {icon:coldIcon, title: "${d.details[0]['NN']}.${d.details[0]['SSSSS']}" });
+       	map.addOverlay(marker);
+
+       	map.setUIToDefault();
+        
+      }
+    }
+    
+    //]]>
+    </script>
+
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100%; }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+    </style>
+  
+  <title>Station Details</title>
 </head>
-<body>
+<body onload="initialize()" onunload="GUnload()">
 
   <div id="getting_started">
-    <h1> Evento ${d.evt["id"]}</h1>
+    <h2>Detalhes da Estacao: ${d.details[0]['NN']}.${d.details[0]['SSSSS']} - ${d.details[0]['desc']}</h2>
 
-    <py:for each="k,v in d.evt.iteritems()">
-    	<p>${k}: ${v}</p>
+ 	<table width="100%">
+	<tr>
+		<td width="50%" valign="top" >
+			<img width="100%" src="/images/pic/${d.details[0]['NN']}.${d.details[0]['SSSSS']}.jpg" alt="" />
+    	</td>
+		<td  valign="top" >
+		    <div id="map_canvas" style="width:100%; height:330px"></div>
+    	</td>
+    </tr>
+    </table>
+
+	<br />
+	<br />
+
+ 	Analise de Ruido
+	<table width="100%"><tr>
+    	<py:for each="c in d.details">
+		<td  width="33%" >
+			<img width="100%" src="${c.png}" alt="" />
+    	</td>
     </py:for>
-    <hr></hr>
+    </tr>
+    </table>
 
-    <py:for each="k,v in d.org.iteritems()">
-    	<p>${k}: ${v}</p>
+	<br />
+	<br />
+	
+	Plot das ultimas 24Hrs	
+	<table width="100%">
+	    <py:for each="c in d.details">
+		<tr><td >
+			<img width="100%" src="/images/heli/${c.NN}.${c.SSSSS}.${c.LL}.${c.CCC}.png" alt="" />
+    	</td></tr>
     </py:for>
-    <hr></hr>
-
-    <py:for each="k,v in d.picks.iteritems()">
-    	<p>${k}: ${v}</p>
-    </py:for>
-    <hr></hr>
-
-    <py:for each="k,v in d.mags.iteritems()">
-    	<p>${k}: ${v}</p>
-    </py:for>
-    <hr></hr>
-
-    <py:for each="k,v in d.amps.iteritems()">
-    	<p>${k}: ${v}</p>
-    </py:for>
-    <hr></hr>
-
+	</table>
+ 
   </div>
   <div class="clearingdiv" />
 

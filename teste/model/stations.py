@@ -12,9 +12,9 @@ class Stations(object):
 
     def __init__(self):
         if self.debug:
-            self.dbDriverName="postgresql"
+            self.dbDriverName="mysql"
             self.dbAddress="sysop:sysop@localhost/seiscomp3"
-            self.dbPlugin = "dbpostgresql"
+            self.dbPlugin = "dbmysql"
 #            self.dbDriverName="mysql"
 #            self.dbAddress="sysop:sysop@localhost/seiscomp3"
 #            self.dbPlugin = "dbmysql"
@@ -26,6 +26,15 @@ class Stations(object):
         self.dbQuery = self._createQuery()
 
         self.inventory = appg.singleInventory().inventory
+
+
+#"""
+#scheli capture -I "combined://seisrequest.iag.usp.br:18000;seisrequest.iag.usp.br:18001" 
+#                --offline --amp-range=1E3 --stream BL.AQDB..HHZ -N -o saida.png
+#"""
+
+
+# scxmldump $D -E iag-usp2012ioiu | scmapcut --ep - -E iag-usp2012ioiu -d 1024x768 -m 5 --layers -o evt.png
 
 
     def getAll(self):
@@ -47,6 +56,28 @@ class Stations(object):
         return self.stations_list
 
 
+    def getAllJson(self):
+            
+        json = ""                                                                  
+        for i in range(self.inventory.networkCount()):
+            net = self.inventory.network(i)
+            for j in range(net.stationCount()):
+                station = net.station(j)
+                lat = float(station.latitude())
+                lon = float(station.longitude())
+                element = """{
+                    NN:       '%s',
+                    SSSSS:    '%s',
+                    desc:     '%s',
+                    lat:       %f, 
+                    lng:       %f
+                    }""" % (net.code(), station.code(), station.description(), lat, lon)
+                json += element + ","
+
+        json = "var businesses = [" + json[ : -1] + "];"
+        print json
+        return json
+
 
     def getDetails(self, sid=None):
         r = {}
@@ -65,40 +96,37 @@ class Stations(object):
         except:
                 r = dict(error="Out of pattern NN.SSSSS")
                 return r
-    
-        r = dict(error="",
-                 evt = dict(id=nn,
-                            desc=ss,
-                            ),
-                 org = dict(time="2012-00-00 00:00:00",
-                            lat="-90",
-                            lat_err = "0.2",
-                            lon="-180",
-                            lon_err="0.3",
-                            dep=10,
-                            dep_err=0.1,
-                            rms = 0.15,
-                            preferred=True,
-                            status="A",
-                            sta_count=15,
-                            ),
-                 picks=dict(station="BLA",
-                            phase="P",
-                            value="2012-00-00 00:01:00"
-                            ),
-                 mags=dict(type="mB",
-                           value=7.4,
-                           ),
-                 amps=dict(type="mB",
-                           value=5,
-                           ),
-                 )
-        return r
+
+        self.details = []
+                                                              
+        for i in range(self.inventory.networkCount()):
+            net = self.inventory.network(i)
+            if nn != net.code(): continue
+            for j in range(net.stationCount()):
+                station = net.station(j)
+                if ss != station.code(): continue
+                for l in range(station.sensorLocationCount()):
+                    location = station.sensorLocation(l)
+                    for s in range(location.streamCount()):
+                        stream = location.stream(s)
+                        png = "%s.%s.%s.%s.ALL.png" % (net.code(), station.code(), location.code().replace("","--"), stream.code()) 
+                        self.details.append(dict(NN=net.code(),
+                                                 SSSSS=station.code(),
+                                                 LL=location.code(),
+                                                 CCC=stream.code(),
+                                                 desc = station.description(),
+                                                 lat = ("%.3f") % station.latitude(),
+                                                 lon = ("%.3f") % station.longitude(),
+                                                 ele = ("%.1f") % station.elevation(), 
+                                                 png = "/images/pqlx/%s.%s/%s"% (net.code(), station.code(), png ),
+                                                 ))
+        return dict(error="",
+                    details=self.details,
+                    )
 
 
     def _createQuery(self):
 
-        print 0.88
         # Get global plugin registry
         self.registry = Client.PluginRegistry.Instance()
         # Add plugin dbmysql

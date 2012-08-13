@@ -17,24 +17,26 @@ class StationsController(BaseController):
     def index(self):
         """Handle the stations page."""
         stations_list = model.stations.Stations().getAll()
+        json = model.stations.Stations().getAllJson()
         return dict(page = 'stations', 
                     stations = stations_list,
-                    cycle = cycle )
+                    cycle = cycle,
+                    json = json)
     
     @expose('teste.templates.stations')
     def stations(self):
         """Handle the events page."""
         stations_list = model.stations.Stations().getAll()
-        print "ma" 
+        json = model.stations.Stations().getAllJson()
         return dict(page='stations', 
-                    station=stations_list)
+                    cycle = cycle,
+                    json = json)
 
 
     @expose('teste.templates.station')
     def _default(self, came_from=lurl('/')):
         id = came_from
         station_details = model.stations.Stations().getDetails(id)
-        print station_details
         return dict(page='station',
                     d = station_details)
         
