@@ -4,6 +4,8 @@
 
 from teste.lib import app_globals as appg
 
+
+import psycopg2
 from seiscomp3 import Client, IO, Core, DataModel
 
 class Stations(object):
@@ -27,12 +29,12 @@ class Stations(object):
 
         self.inventory = appg.singleInventory().inventory
 
+        self.stations_list = []
 
 #"""
 #scheli capture -I "combined://seisrequest.iag.usp.br:18000;seisrequest.iag.usp.br:18001" 
 #                --offline --amp-range=1E3 --stream BL.AQDB..HHZ -N -o saida.png
 #"""
-
 
 # scxmldump $D -E iag-usp2012ioiu | scmapcut --ep - -E iag-usp2012ioiu -d 1024x768 -m 5 --layers -o evt.png
 
@@ -40,18 +42,41 @@ class Stations(object):
     def getAll(self):
         
         self.stations_list = []
-                                                              
-        for i in range(self.inventory.networkCount()):
-            net = self.inventory.network(i)
-            for j in range(net.stationCount()):
-                station = net.station(j)
-                self.stations_list.append(dict(NN=net.code(),
-                                              SSSSS=station.code(),
-                                              desc = station.description(),
-                                              lat = ("%.3f") % station.latitude(),
-                                              lon = ("%.3f") % station.longitude(),
-                                              ele = ("%.1f") % station.elevation(), 
-                                              ) )
+        
+        
+        # Connect to an existing database
+        conn = psycopg2.connect(dbname="sc_request", user="sysop", password="sysop", host="10.110.0.130")
+        
+        # Open a cursor to perform database operations
+        cur = conn.cursor()
+        
+        # Query the database and obtain data as Python objects
+        cur.execute("""
+                        SELECT          pstation.m_publicid as publicid,
+                                        station.m_code,
+                                        station.m_description,
+                                        station.m_latitude,
+                                        station.m_longitude,
+                                        station.m_elevation
+                        FROM            station,
+                                        publicobject as pstation
+                        WHERE           station._oid = pstation._oid
+                        ORDER BY        station.m_code;
+                          """)
+
+        for line in cur:
+            self.stations_list.append(dict(
+            NN = line[0].split("/")[1],
+            SSSSS = line[1],
+            desc = line[2],
+            lat= ("%.2f") % line[3], 
+            lon= ("%.2f") % line[4],
+            ele= ("%.1f") % line[5],
+            ))
+        
+        # Close communication with the database
+        cur.close()
+        conn.close()
 
         return self.stations_list
 
@@ -59,23 +84,18 @@ class Stations(object):
     def getAllJson(self):
             
         json = ""                                                                  
-        for i in range(self.inventory.networkCount()):
-            net = self.inventory.network(i)
-            for j in range(net.stationCount()):
-                station = net.station(j)
-                lat = float(station.latitude())
-                lon = float(station.longitude())
+        for sta in self.stations_list:
                 element = """{
                     NN:       '%s',
                     SSSSS:    '%s',
                     desc:     '%s',
                     lat:       %f, 
                     lng:       %f
-                    }""" % (net.code(), station.code(), station.description(), lat, lon)
+                    }""" % (sta['NN'], sta['SSSSS'], sta['desc'], sta['lat'], sta['lon'])
                 json += element + ","
 
         json = "var businesses = [" + json[ : -1] + "];"
-        print json
+        #print json
         return json
 
 
