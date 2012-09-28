@@ -213,23 +213,27 @@
     		
   	<table width="100%"><tr>
   		<td height="250px">
+
 			<div width="100%" >
-				FALTA: <br />
+
+		    	<div id="map" style="width:100%; height:330px; overflow:hidden;"></div>
+
+<!-- 			FALTA: <br />
 				MELHORAR DETALHES !!! <br />
 				filtros para selecionar estacoes<br />
 				link para sismogramas<br />
 				filtro por eventos<br />
+ -->
 			</div>  		
   		</td>
   		<td width="50%">
 			<div>
-		    	
-		    	<div id="map" style="width:100%; height:330px; overflow:hidden;"></div>
-
+<!-- 
 				FALTA: <br />
 				mapa com estacoes<br/>
 				filtro por caixa<br />
 				filtro por distancia<br />
+ -->
 			</div>  		
   		</td>
   	</tr></table>
@@ -237,28 +241,31 @@
   
     <table  py:with="cls=cycle(('#ffffff', '#ccebef'))"  width="100%"  style="text-align: center;" >
 	        <tr class="table_header" >
-	            <td>Rede.Estacao</td>
+	            <td>Rede.Estacao [#Canais]</td>
 	            <td>Local</td>
 	            <td>Latitude</td>
 	            <td>Longitude</td>
 	            <td>Elevacao</td>
+	            <td>Dataless</td>
 	        </tr>
     	
         <py:for each="s in stations">
 	        <tr style="background-color: ${cls.next()}">
 	            <td style="text-align: center;">
-	            	<a href="/stations/${s.NN}.${s.SSSSS}" >${s.NN}.${s.SSSSS}</a>
+	            	<a href="/stations/${s.NN}.${s.SSSSS}" >${s.NN}.${s.SSSSS}.[${s.n_ch}]</a>
 	            </td>
 	            <td>${s.desc}</td>
 	            <td>${s.lat}</td>
 	            <td>${s.lon}</td>
 	            <td>${s.ele}</td>
+				<td>
+				<a href="ftp://trovador.iag.usp.br/brasis/SDS/dataless/all/${s.NN}.${s.SSSSS}.dataless">dataless</a>
+				</td>
 	        </tr>
         </py:for>
     </table>
   </div>
-  <div class="clearingdiv" />
-  <div class="notice">E nois!!!
-  </div>
+<!--   <div class="clearingdiv" />
+  <div class="notice" /> -->
 </body>
 </html>

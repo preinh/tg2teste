@@ -12,12 +12,14 @@ from itertools import cycle
 __all__ = ['StationsController']
 
 class StationsController(BaseController):
+    
+    _s = model.stations.Stations()
 
     @expose('teste.templates.stations')
     def index(self):
         """Handle the stations page."""
-        stations_list = model.stations.Stations().getAll()
-        json = model.stations.Stations().getAllJson()
+        stations_list = self._s.getAll()
+        json = self._s.getAllJson()
         return dict(page = 'stations', 
                     stations = stations_list,
                     cycle = cycle,
@@ -26,8 +28,9 @@ class StationsController(BaseController):
     @expose('teste.templates.stations')
     def stations(self):
         """Handle the events page."""
-        stations_list = model.stations.Stations().getAll()
-        json = model.stations.Stations().getAllJson()
+        #s = model.stations.Stations()
+        stations_list = self._s.getAll()
+        json = self._s.getAllJson()
         return dict(page='stations', 
                     cycle = cycle,
                     json = json)
@@ -36,7 +39,8 @@ class StationsController(BaseController):
     @expose('teste.templates.station')
     def _default(self, came_from=lurl('/')):
         id = came_from
-        station_details = model.stations.Stations().getDetails(id)
+        station_details = self._s.getDetails(id)
+        #print "ID::" + str(station_details)
         return dict(page='station',
                     d = station_details)
         

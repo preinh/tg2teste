@@ -50,25 +50,6 @@ class RootController(BaseController):
         """Handle the front-page."""
         return dict(page='index')
 
-#    @expose()
-#    def events(self):
-#        """Handle the events page."""
-#        redirect('/events/')
-
-#    @expose()
-#    def stations(self):
-#        """Handle the events page."""
-#        redirect('/stations')
-  
-    
-#    @expose('teste.templates.stations')
-#    def stations(self):
-#        """Handle the stations page."""
-#        #print "atendi ao events request"
-#        event_list = model.events.Events().getAll()
-#        #print event_list
-#        return dict(page='stations', events=event_list)
-    
 
     @expose('teste.templates.waveform')
     def waveform(self):
@@ -79,7 +60,6 @@ class RootController(BaseController):
         return dict(page='waveform', events=event_list)
     
 
-
     @expose('teste.templates.google')
     def google(self):
         """Handle the 'about' page."""
@@ -87,10 +67,12 @@ class RootController(BaseController):
 
 
 
+
     @expose('teste.templates.about')
-    def about(self):
-        """Handle the 'about' page."""
+    def about(self, *args, **kw):
         return dict(page='about')
+
+
 
     @expose('teste.templates.environ')
     def environ(self):

@@ -9,6 +9,9 @@
 #
 #from teste.model import DeclarativeBase, metadata, DBSession
 
+
+import psycopg2
+
 from seiscomp3 import Client, IO, Core, DataModel
 import commands
 
@@ -36,8 +39,11 @@ class Events(object):
         
         daysBefore = 20
         
-        self.e = Core.Time.GMT()
-        self.s = self.e - Core.TimeSpan(daysBefore*24*60*60)
+        self.e = datetime.utcnow()
+        self.b = self.e - timedelta(days=daysBefore)
+        
+        #self.e = Core.Time.GMT()
+        #self.s = self.e - Core.TimeSpan(daysBefore*24*60*60)
         
 #        self.s = Core.Time_FromString("2012-01-01 00:00:00", "%F %T")
 #        self.e = Core.Time_FromString("2012-02-01 00:00:00", "%F %T")
@@ -45,77 +51,112 @@ class Events(object):
         self.events_list = []
 
 
-    def getAll(self):
+    def getAll(self, filter=""):
+
+        self.events_list = []
         
-        # query events
-        qEvts = self.dbQuery.getEvents(self.s, self.e)
+        # Connect to an existing database
+        conn = psycopg2.connect(dbname="sc_master", user="sysop", password="sysop", host="10.110.0.130")
         
-        # collect event/p_origin/p_mag
-        self.events = []
-        for obj in qEvts:
-            evt = DataModel.Event.Cast(obj)
-            if evt:
-                self.events.append( [ evt.publicID(), evt.preferredOriginID(), evt.preferredMagnitudeID()] )
- 
-        # pra cada evento        
-        for evt, p_org, p_mag in self.events:
+        # Open a cursor to perform database operations
+        cur = conn.cursor()
+        
+        # Query the database and obtain data as Python objects
+        cur.execute("""
+            SELECT      pevent.m_publicid AS eventid, 
+                        eventdescription.m_text AS "desc", 
+                        event.m_creationinfo_agencyid AS agency,
+                        origin.m_time_value AS "time", 
+                        origin.m_latitude_value AS lat, 
+                        origin.m_longitude_value AS lon, 
+                        origin.m_depth_value AS depth,
+                        magnitude.m_magnitude_value AS mag, 
+                        magnitude.m_type AS mag_type, 
+                        magnitude.m_stationcount AS mag_count 
+           FROM         event, 
+                        publicobject pevent, 
+                        origin, 
+                        publicobject porigin, 
+                        magnitude, 
+                        publicobject pmagnitude, 
+                        eventdescription
+          WHERE         event._oid = pevent._oid 
+          AND           origin._oid = porigin._oid 
+          AND           magnitude._oid = pmagnitude._oid 
+          AND           event.m_preferredoriginid::text = porigin.m_publicid::text 
+          AND           event.m_preferredmagnitudeid::text = pmagnitude.m_publicid::text 
+          AND           eventdescription._parent_oid = pevent._oid
+          AND           origin.m_time_value >= '%s' 
+          AND           origin.m_time_value <= '%s'
+          %s
+          ORDER BY      time DESC;
+          """  % (self.b, self.e, filter))
 
-            _e = self.dbQuery.getEventByPublicID(evt)
-            self.dbQuery.load(_e)
-            
-            if _e.eventDescriptionCount() != 0:
-                desc = _e.eventDescription(0).text()
-            else:
-                desc = "unknown"
+        for line in cur:
+            evt = line[0]
+            desc = line[1]
+            _time = line[3] 
+            lat= ("%.2f") % line[4] 
+            lon= ("%.2f") % line[5]
+            dep= ("%d") % line[6]
+            val = line[7]
+            typ = line[8]
+            stc = line[9]
+            _mag = ("%.1f %s (%d)") % (val, typ, stc)
 
-            # pior jeito de buscar a preferred_origin
-            qOrigin = self.dbQuery.getOrigins(evt)
-            for obj_origin in qOrigin:
-                origin = DataModel.Origin.Cast(obj_origin)
-                if origin.publicID() == p_org:
-                    break
-
-            # separate origin from dbInterator
-            org = origin
-            
-            #load origin parameters
-            self.dbQuery.load(org)
-            
-            # get magnitudes
-            nmag = org.magnitudeCount()
-            if nmag != 0:
-                # pior jeito de buscar a preferred_magnitude
-                for i in xrange(nmag):
-                    mag = org.magnitude(i)
-                    if mag.publicID() == p_mag:
-                        break
-    
-                val = mag.magnitude().value()
-                typ = mag.type()
-                stc = mag.stationCount()
-                _mag = ("%.1f %s (%d)") % (val, typ, stc)
-            else:
-                _mag = "-- (--)" 
-                
             d = dict(id=evt,
                      desc= desc,
-                     time= str(org.time().value()), 
-                     lat= ("%.2f") % org.latitude().value(), 
-                     lon= ("%.2f") % org.longitude().value(),
-                     dep= ("%d") % org.depth().value(),
+                     time= _time, 
+                     lat= lat, 
+                     lon= lon,
+                     dep= dep,
                      mag= _mag
                      )        
+
             self.events_list.append(d)
 
-        return sorted(self.events_list, key=lambda event: event['time'], reverse=True)
+        
+        # Close communication with the database
+        cur.close()
+        conn.close()
+
+        #return sorted(self.events_list, key=lambda event: event['time'], reverse=True)
 
         return self.events_list
 
 
     def getAllJson(self):
         json=""
-        for d in self.events_list[1:]:
-            json += """
+        try:
+            
+            for d in self.events_list[1:]:
+                json += """
+                    {
+                        id:     '%s',
+                        desc:   '%s',
+                        time:   '%s',
+                        lat:    %f,
+                        lng:    %f,
+                        dep:    %f,
+                        mag:    '%s'
+                    },
+                """ % (d['id'], d['desc'], d['time'], float(str(d['lat'])), float(str(d['lon'])), float(str(d['dep'])), d['mag'] )
+    
+            json = "var businesses = [" + json[ : -1] + "];"
+        except:
+            pass
+        
+        return json
+    
+    
+    def getLastJson(self):
+        json=""
+        
+        try:
+            #print self.events_list
+            d = self.events_list[0]
+        
+            json = """
                 {
                     id:     '%s',
                     desc:   '%s',
@@ -125,31 +166,12 @@ class Events(object):
                     dep:    %f,
                     mag:    '%s'
                 },
-            """ % (d['id'], d['desc'], d['time'], float(d['lat']), float(d['lon']), float(d['dep']), d['mag'] )
-
-        json = "var businesses = [" + json[ : -1] + "];"
-        return json
+            """ % (d['id'], d['desc'], d['time'], float(str(d['lat'])), float(str(d['lon'])), float(str(d['dep'])), d['mag'] )
     
-    
-    def getLastJson(self):
-        json=""
+            json = "var last = [" + json[ : -1] + "];"
+        except:
+            pass
         
-        print self.events_list
-        d = self.events_list[0]
-        
-        json = """
-            {
-                id:     '%s',
-                desc:   '%s',
-                time:   '%s',
-                lat:    %f,
-                lng:    %f,
-                dep:    %f,
-                mag:    '%s'
-            },
-        """ % (d['id'], d['desc'], d['time'], float(d['lat']), float(d['lon']), float(d['dep']), d['mag'] )
-
-        json = "var last = [" + json[ : -1] + "];"
         return json
 
 

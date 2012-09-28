@@ -6,30 +6,63 @@ from teste.lib import app_globals as appg
 
 
 import psycopg2
-from seiscomp3 import Client, IO, Core, DataModel
+#from seiscomp3 import Client, IO, Core, DataModel
 
 class Stations(object):
 
-    debug = False
-
+#    debug = False
+#
     def __init__(self):
-        if self.debug:
-            self.dbDriverName="mysql"
-            self.dbAddress="sysop:sysop@localhost/seiscomp3"
-            self.dbPlugin = "dbmysql"
-#            self.dbDriverName="mysql"
-#            self.dbAddress="sysop:sysop@localhost/seiscomp3"
-#            self.dbPlugin = "dbmysql"
-        else:
-            self.dbDriverName="postgresql"
-            self.dbAddress="sysop:sysop@10.110.0.130/sc_request"
-            self.dbPlugin = "dbpostgresql"
-            
-        self.dbQuery = self._createQuery()
-
-        self.inventory = appg.singleInventory().inventory
-
         self.stations_list = []
+        
+        # Connect to an existing database
+        conn = psycopg2.connect(dbname="sc_request", user="sysop", password="sysop", host="10.110.0.130")
+        
+        # Open a cursor to perform database operations
+        cur = conn.cursor()
+        
+        # Query the database and obtain data as Python objects
+        cur.execute("""
+                    SELECT          net.m_code as net,
+                                    station.m_code as sta,
+                                    station.m_description as desc,
+                                    station.m_latitude as lat,
+                                    station.m_longitude as lon,
+                                    station.m_elevation as elev,
+                                    count(stream.m_code) as channels
+                    FROM            station,
+                                    network as net,
+                                    sensorlocation as sl LEFT OUTER JOIN stream ON (stream._parent_oid = sl._oid )
+                    WHERE            sl._parent_oid = station._oid
+                    AND             station._parent_oid = net._oid
+                    /* AND          net.m_code = 'BL'
+                    AND             station.m_code = 'APOB'
+                    */
+                    GROUP BY    net.m_code, 
+                                    station.m_code, 
+                                    station.m_description, 
+                                    station.m_longitude, 
+                                    station.m_latitude, 
+                                    station.m_elevation
+                    ORDER BY        net, sta;
+                    """)
+
+        for line in cur:
+            self.stations_list.append(dict(
+                NN = line[0],
+                SSSSS = line[1],
+                desc = line[2],
+                lat = ("%.2f") % line[3], 
+                lon = ("%.2f") % line[4],
+                ele = ("%.1f") % line[5],
+                n_ch = line[6],
+            ))
+        
+        # Close communication with the database
+        cur.close()
+        conn.close()
+
+
 
 #"""
 #scheli capture -I "combined://seisrequest.iag.usp.br:18000;seisrequest.iag.usp.br:18001" 
@@ -40,49 +73,10 @@ class Stations(object):
 
 
     def getAll(self):
-        
-        self.stations_list = []
-        
-        
-        # Connect to an existing database
-        conn = psycopg2.connect(dbname="sc_request", user="sysop", password="sysop", host="10.110.0.130")
-        
-        # Open a cursor to perform database operations
-        cur = conn.cursor()
-        
-        # Query the database and obtain data as Python objects
-        cur.execute("""
-                        SELECT          pstation.m_publicid as publicid,
-                                        station.m_code,
-                                        station.m_description,
-                                        station.m_latitude,
-                                        station.m_longitude,
-                                        station.m_elevation
-                        FROM            station,
-                                        publicobject as pstation
-                        WHERE           station._oid = pstation._oid
-                        ORDER BY        station.m_code;
-                          """)
-
-        for line in cur:
-            self.stations_list.append(dict(
-            NN = line[0].split("/")[1],
-            SSSSS = line[1],
-            desc = line[2],
-            lat= ("%.2f") % line[3], 
-            lon= ("%.2f") % line[4],
-            ele= ("%.1f") % line[5],
-            ))
-        
-        # Close communication with the database
-        cur.close()
-        conn.close()
-
         return self.stations_list
 
 
     def getAllJson(self):
-            
         json = ""                                                                  
         for sta in self.stations_list:
                 element = """{
@@ -91,7 +85,7 @@ class Stations(object):
                     desc:     '%s',
                     lat:       %f, 
                     lng:       %f
-                    }""" % (sta['NN'], sta['SSSSS'], sta['desc'], sta['lat'], sta['lon'])
+                    }""" % (sta['NN'], sta['SSSSS'], sta['desc'], float(sta['lat']), float(sta['lon']))
                 json += element + ","
 
         json = "var businesses = [" + json[ : -1] + "];"
@@ -109,7 +103,6 @@ class Stations(object):
             sid_list = sid.split('.')
             nn = sid_list[0]
             ss = sid_list[1]
-    
             if not nn or not ss:
                 r = dict(error="Station Not Found")
                 return r
@@ -117,51 +110,61 @@ class Stations(object):
                 r = dict(error="Out of pattern NN.SSSSS")
                 return r
 
+        # Connect to an existing database
+        conn = psycopg2.connect(dbname="sc_request", user="sysop", password="sysop", host="10.110.0.130")
+        
+        # Open a cursor to perform database operations
+        cur = conn.cursor()
+        
+        # Query the database and obtain data as Python objects
+        cur.execute("""
+                    SELECT          net.m_code as net,
+                                    station.m_code as sta,
+                                    sl.m_code as loc,
+                                    stream.m_code as cha,
+                                    stream.m_start as cha_sta,
+                                    stream.m_end as cha_end,
+                                    station.m_description as desc,
+                                    station.m_latitude as lat,
+                                    station.m_longitude as lon,
+                                    station.m_elevation as elev
+                    FROM            station,
+                                    network as net,
+                                    sensorlocation as sl,
+                                    stream
+                    WHERE           stream._parent_oid = sl._oid
+                    AND             sl._parent_oid = station._oid
+                    AND             station._parent_oid = net._oid
+                    AND             net.m_code = '%s'
+                    AND             station.m_code = '%s'
+                    ORDER BY        station.m_code;
+                    """  % (nn, ss))
+
         self.details = []
-                                                              
-        for i in range(self.inventory.networkCount()):
-            net = self.inventory.network(i)
-            if nn != net.code(): continue
-            for j in range(net.stationCount()):
-                station = net.station(j)
-                if ss != station.code(): continue
-                for l in range(station.sensorLocationCount()):
-                    location = station.sensorLocation(l)
-                    for s in range(location.streamCount()):
-                        stream = location.stream(s)
-                        png = "%s.%s.%s.%s.ALL.png" % (net.code(), station.code(), location.code().replace("","--"), stream.code()) 
-                        self.details.append(dict(NN=net.code(),
-                                                 SSSSS=station.code(),
-                                                 LL=location.code(),
-                                                 CCC=stream.code(),
-                                                 desc = station.description(),
-                                                 lat = ("%.3f") % station.latitude(),
-                                                 lon = ("%.3f") % station.longitude(),
-                                                 ele = ("%.1f") % station.elevation(), 
-                                                 png = "/images/pqlx/%s.%s/%s"% (net.code(), station.code(), png ),
-                                                 ))
+        for line in cur:
+            png = "%s.%s.%s.%s.ALL.png" % (line[0], line[1], line[2].replace("","--"), line[3])
+            self.details.append(dict(NN=line[0],
+                                     SSSSS=line[1],
+                                     LL=line[2],
+                                     CCC=line[3],
+                                     desc = line[6],
+                                     lat = ("%.3f") % line[7],
+                                     lon = ("%.3f") % line[8],
+                                     ele = ("%.1f") % line[9], 
+                                     png = "/images/pqlx/%s.%s/%s"% (line[0], line[1], png ),
+                                     ))
+        
+        # Close communication with the database
+        cur.close()
+        conn.close()
+
+        if self.details == []:
+            return dict(error="unable to get streams")
+        
         return dict(error="",
                     details=self.details,
                     )
 
-
-    def _createQuery(self):
-
-        # Get global plugin registry
-        self.registry = Client.PluginRegistry.Instance()
-        # Add plugin dbmysql
-        self.registry.addPluginName(self.dbPlugin)
-        # Load all added plugins
-        self.registry.loadPlugins()
-        # Create dbDriver
-        self.dbDriver = IO.DatabaseInterface.Create(self.dbDriverName)
-        # Open Connection 
-        #dbDriver.Open(dbAddress)   
-        self.dbDriver.connect(self.dbAddress)
-        # set Query object
-        return DataModel.DatabaseQuery(self.dbDriver)
-
-    
     def __repr__(self):
         return ('<Stations: start=%s end=%s>' % str(self.s), str(self.e)).encode('utf-8')
 

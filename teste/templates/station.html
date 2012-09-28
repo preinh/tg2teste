@@ -57,6 +57,8 @@
 
   <div id="getting_started">
     <h2>Detalhes da Estacao: ${d.details[0]['NN']}.${d.details[0]['SSSSS']} - ${d.details[0]['desc']}</h2>
+	<a href="ftp://trovador.iag.usp.br/brasis/SDS/dataless/all/${d.details[0]['NN']}.${d.details[0]['SSSSS']}.dataless"><b>[Download Dataless]</b></a>
+	<br />
 
  	<table width="100%">
 	<tr>
@@ -69,8 +71,6 @@
     </tr>
     </table>
 
-	<br />
-	<br />
 
  	Analise de Ruido
 	<table width="100%"><tr>
@@ -95,11 +95,12 @@
 	</table>
  
   </div>
-  <div class="clearingdiv" />
+  
+<!--   <div class="clearingdiv" />
 
   <div class="notice">
   	${d.error}
-  </div>
+  </div> -->
 
 
 </body>
